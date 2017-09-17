@@ -137,9 +137,11 @@ install: all
 .PHONY: kops
 kops: ${KOPS}
 
+.PHONY: ${KOPS}
 ${KOPS}: ${BINDATA_TARGETS}
 	go build ${EXTRA_BUILDFLAGS} -ldflags "-X k8s.io/kops.Version=${VERSION} -X k8s.io/kops.GitVersion=${GITSHA} ${EXTRA_LDFLAGS}" -o $@ k8s.io/kops/cmd/kops/
 
+.PHONY: ${GOBINDATA}
 ${GOBINDATA}:
 	mkdir -p ${LOCAL}
 	go build ${EXTRA_BUILDFLAGS} -ldflags "${EXTRA_LDFLAGS}" -o $@ k8s.io/kops/vendor/github.com/jteeuwen/go-bindata/go-bindata
@@ -150,9 +152,11 @@ gobindata-tool: ${GOBINDATA}
 .PHONY: kops-gobindata
 kops-gobindata: gobindata-tool ${BINDATA_TARGETS}
 
+.PHONY: upup/models/bindata.go
 upup/models/bindata.go: ${GOBINDATA}
 	cd ${GOPATH_1ST}/src/k8s.io/kops; ${GOBINDATA} -o $@ -pkg models -ignore="\\.DS_Store" -ignore="bindata\\.go" -ignore="vfs\\.go" -prefix upup/models/ upup/models/...
 
+.PHONY: federation/model/bindata.go
 federation/model/bindata.go: ${GOBINDATA}
 	cd ${GOPATH_1ST}/src/k8s.io/kops; ${GOBINDATA} -o $@ -pkg model -ignore="\\.DS_Store" -ignore="bindata\\.go" -prefix federation/model/ federation/model/...
 
@@ -191,6 +195,7 @@ hooks: # Install Git hooks
 test: ${BINDATA_TARGETS}  # Run tests locally
 	for t in ${TESTABLE_PACKAGES}; do go test -v  $$t 2>&1; done 
 
+.PHONY: ${DIST}/linux/amd64/nodeup
 ${DIST}/linux/amd64/nodeup: ${BINDATA_TARGETS}
 	mkdir -p ${DIST}
 	GOOS=linux GOARCH=amd64 go build -a ${EXTRA_BUILDFLAGS} -o $@ -ldflags "${EXTRA_LDFLAGS} -X k8s.io/kops.Version=${VERSION} -X k8s.io/kops.GitVersion=${GITSHA}" k8s.io/kops/cmd/nodeup
@@ -204,10 +209,12 @@ crossbuild-nodeup-in-docker:
 	docker run --name=nodeup-build-${UNIQUE} -e STATIC_BUILD=yes -e VERSION=${VERSION} -v ${MAKEDIR}:/go/src/k8s.io/kops golang:${GOVERSION} make -f /go/src/k8s.io/kops/Makefile crossbuild-nodeup
 	docker cp nodeup-build-${UNIQUE}:/go/.build .
 
+.PHONY: ${DIST}/darwin/amd64/kops
 ${DIST}/darwin/amd64/kops: ${BINDATA_TARGETS}
 	mkdir -p ${DIST}
 	GOOS=darwin GOARCH=amd64 go build -a ${EXTRA_BUILDFLAGS} -o $@ -ldflags "${EXTRA_LDFLAGS} -X k8s.io/kops.Version=${VERSION} -X k8s.io/kops.GitVersion=${GITSHA}" k8s.io/kops/cmd/kops
 
+.PHONY: ${DIST}/linux/amd64/kops
 ${DIST}/linux/amd64/kops: ${BINDATA_TARGETS}
 	mkdir -p ${DIST}
 	GOOS=linux GOARCH=amd64 go build -a ${EXTRA_BUILDFLAGS} -o $@ -ldflags "${EXTRA_LDFLAGS} -X k8s.io/kops.Version=${VERSION} -X k8s.io/kops.GitVersion=${GITSHA}" k8s.io/kops/cmd/kops
@@ -363,6 +370,7 @@ protokube-push: protokube-image
 .PHONY: nodeup
 nodeup: ${NODEUP}
 
+.PHONY: ${NODEUP}
 ${NODEUP}: ${BINDATA_TARGETS}
 	go build ${EXTRA_BUILDFLAGS} -ldflags "${EXTRA_LDFLAGS} -X k8s.io/kops.Version=${VERSION} -X k8s.io/kops.GitVersion=${GITSHA}" -o $@ k8s.io/kops/cmd/nodeup
 
@@ -486,6 +494,7 @@ ci: govet verify-gofmt verify-boilerplate nodeup examples test | verify-gendocs 
 .PHONY: channels
 channels: ${CHANNELS}
 
+.PHONY: ${CHANNELS}
 ${CHANNELS}:
 	go build ${EXTRA_BUILDFLAGS} -o $@ -ldflags "-X k8s.io/kops.Version=${VERSION} ${EXTRA_LDFLAGS}" k8s.io/kops/channels/cmd/channels
 
